@@ -20,10 +20,10 @@ from torch.distributions import Normal, Distribution
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
 
-from modules.iterable_dataset_wrapper import IterableWrapper
-from modules.loss import elbo, iwae
-from modules.model import Model
-from modules.nca import NCA
+from iterable_dataset_wrapper import IterableWrapper
+from loss import elbo, iwae
+from model import Model
+from nca import NCA
 from util import get_writers
 
 

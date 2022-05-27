@@ -1,21 +1,13 @@
 import os, sys
-currDir = os.path.dirname(os.path.realpath(__file__))
-rootDir = os.path.abspath(os.path.join(currDir, '..'))
-initDir = os.path.abspath(os.path.join(rootDir, '..'))
-if rootDir not in sys.path: # add parent dir to paths
-    sys.path.append(rootDir)
-
-if initDir not in sys.path: # add parent dir to paths
-    sys.path.append(initDir)
 import torch as t
 import math
 from torch import nn
 from torch.nn import DataParallel
 from torchvision import transforms, datasets
 
-from modules.dml import DiscretizedMixtureLogitsDistribution
-from modules.residual import Residual
-from modules.vnca import VNCA
+from dml import DiscretizedMixtureLogitsDistribution
+from residual import Residual
+from vnca import VNCA
 from train import train
 from data import PokemonIMG
 
