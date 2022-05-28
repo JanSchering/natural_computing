@@ -12,10 +12,6 @@ class DiscretizedMixtureLogitsDistribution(Distribution):
         self.logits = logits
         self.nr_mix = nr_mix
         self._batch_shape = logits.shape
-        self.grad_fn = False
-    
-    def _is_view(*kwargs):
-        return False
 
     def log_prob(self, value:torch.Tensor):
         """ 
@@ -29,9 +25,6 @@ class DiscretizedMixtureLogitsDistribution(Distribution):
         Sample from the distribution
         """
         return (sample_from_discretized_mix_logistic(self.logits, self.nr_mix) + 1) / 2
-    
-    def size(self):
-        return torch.zeros([1])
 
     @property
     def mean(self):
