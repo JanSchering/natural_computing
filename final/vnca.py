@@ -1,14 +1,7 @@
 import os, sys
-currDir = os.path.dirname(os.path.realpath(__file__))
-rootDir = os.path.abspath(os.path.join(currDir, '..'))
-initDir = os.path.abspath(os.path.join(rootDir, '..'))
-if rootDir not in sys.path: # add parent dir to paths
-    sys.path.append(rootDir)
 
-if initDir not in sys.path: # add parent dir to paths
-    sys.path.append(initDir)
 import random
-from typing import Sequence, Tuple
+from typing import List, Sequence, Tuple
 
 import numpy as np
 import torch as t
@@ -48,36 +41,36 @@ class VNCA(Model):
                  max_steps: int
                  ):
         super(Model, self).__init__()
-        self.h = h
-        self.w = w
-        self.n_channels = n_channels
-        self.state_to_dist = states_to_dist
-        self.z_size = z_size
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.h = h # height of the image
+        self.w = w # width of the image
+        self.n_channels = n_channels # number of channels of the image
+        self.state_to_dist = states_to_dist # function that turns a set of states to a distribution
+        self.z_size = z_size # dimensionality of the latent space
+        self.device = "cuda" if torch.cuda.is_available() else "cpu" # check if we have a gpu
 
-        self.pool = []
-        self.pool_size = 1024
-        self.n_damage = batch_size // 4
-        self.dmg_size = dmg_size
+        self.pool = [] # Pool of NCA states for Pool training
+        self.pool_size = 1024 # Max amount of states in the training pool 
+        self.n_damage = batch_size // 4 # Amount of states that should be damaged during training
+        self.dmg_size = dmg_size # Amount of damage to apply per state 
 
-        self.encoder = encoder
-        self.nca = NCA(update_net, min_steps, max_steps, p_update)
-        self.p_z = Normal(t.zeros(self.z_size, device=self.device), t.ones(self.z_size, device=self.device))
+        self.encoder = encoder # The encoder network
+        self.nca = NCA(update_net, min_steps, max_steps, p_update) # The NCA to be used for the decoding
+        self.p_z = Normal(t.zeros(self.z_size, device=self.device), t.ones(self.z_size, device=self.device)) # defines a (0, I) Normal prior distribution for the latent space
 
-        self.test_set = test_data
-        self.train_loader = iter(DataLoader(IterableWrapper(train_data), batch_size=batch_size, pin_memory=True))
-        self.val_loader = iter(DataLoader(IterableWrapper(val_data), batch_size=batch_size, pin_memory=True))
-        self.train_writer, self.test_writer = get_writers("vnca")
+        self.test_set = test_data # appoint the test data
+        self.train_loader = iter(DataLoader(IterableWrapper(train_data), batch_size=batch_size, pin_memory=True)) # initialize a data loader for the training data
+        self.val_loader = iter(DataLoader(IterableWrapper(val_data), batch_size=batch_size, pin_memory=True)) # initialize a data loader for the validation data
+        self.train_writer, self.test_writer = get_writers("vnca") # initialize a writer for the tensorboard
 
-        print(self)
-        total = sum(p.numel() for p in self.parameters())
+        print(self) # report the model
+        total = sum(p.numel() for p in self.parameters()) # calculate the total number of learnable parameters
         for n, p in self.named_parameters():
-            print(n, p.shape, p.numel(), "%.1f" % (p.numel() / total * 100))
-        print("Total: %d" % total)
+            print(n, p.shape, p.numel(), "%.1f" % (p.numel() / total * 100)) # report information about the layers of the encoder and the decoder
+        print("Total: %d" % total) # print the total number of learnable parameters
 
-        self.to(self.device)
-        self.optimizer = optim.Adam(self.parameters(), lr=1e-4)
-        self.batch_idx = 0
+        self.to(self.device) # move the pytorch Model instance to the gpu if possible
+        self.optimizer = optim.Adam(self.parameters(), lr=1e-4) # initialize the ADAM optimizer
+        self.batch_idx = 0 # initalize the batch index to 0
 
     def train_batch(self):
         self.train(True)
@@ -120,62 +113,72 @@ class VNCA(Model):
         return dist.sample(), dist.mean
 
     def encode(self, x) -> Distribution:  # q(z|x)
-        #x.sg("Bchw")
-        x
-        #q = self.encoder(x).sg("BZ")
-        q = self.encoder(x)
-        #loc = q[:, :self.z_size].sg("Bz")
-        loc = q[:, :self.z_size]
+        # x Should be of shape (B,c,h,w)
+        q = self.encoder(x) # Returns a Tensor of shape (B, 2*z)
+        loc = q[:, :self.z_size] # Mean of the normal distribution is given by the first <z> entries in <q>
         #logsigma = q[:, self.z_size:].sg("Bz")
-        logsigma = q[:, self.z_size:]
-        return Normal(loc=loc, scale=t.exp(logsigma))
+        logsigma = q[:, self.z_size:] # The log variance of the normal distribution is given by the last <z> entries in <q>
+        return Normal(loc=loc, scale=t.exp(logsigma)) # Conditional Normal distribution over the latent space using the mean and variance from the encoder
 
-    def decode(self, z: t.Tensor) -> Tuple[Distribution, Sequence[t.Tensor]]:  # p(x|z)
-        #z.sg("bzhw")
+    def decode(self, z: t.Tensor) -> List[t.Tensor]:  # p(x|z)
+        # z should be of shape (B,z,h,w)
         return self.nca(z)
 
     def damage(self, states):
-        #states.sg("*zhw")
+        # states should be of shape (*,z,h,w) -> a set of NCA grid states to be damaged
         mask = t.ones_like(states)
+        # Iterate over the set of grid states
         for i in range(states.shape[0]):
+            # Determine the height at which to start the square of damaged cells
             h1 = random.randint(0, states.shape[2] - self.dmg_size)
+            # Determine the width at which to start the square of damaged cells
             w1 = random.randint(0, states.shape[3] - self.dmg_size)
+            # Set the square of cell coordinates to be damaged to zero in the mask
             mask[i, :, h1:h1 + self.dmg_size, w1:w1 + self.dmg_size] = 0.0
+        # Damage the states using the created mask
         return states * mask
 
     def forward(self, x, n_samples, loss_fn):
-        #ShapeGuard.reset()
-        #x.sg("Bchw")
+        # x should be of shape (B,c,h,w)
         x = x.to(self.device)
 
         # Pool samples
-        bs = x.shape[0]
-        n_pool_samples = bs // 2
-        pool_states = None
+        bs = x.shape[0] # get batch size from x
+        n_pool_samples = bs // 2 # set the number of pool samples as half the batch size
+        pool_states = None # init the pool states to be used for the pool training
         if self.training and 0 < n_pool_samples < len(self.pool):
             # pop n_pool_samples worst in the pool
             pool_samples = self.pool[:n_pool_samples]
+            # remove the popped samples from the pool
             self.pool = self.pool[n_pool_samples:]
 
+            # zip the pool samples into Tuples and deconstruct for usage 
             pool_x, pool_states, _ = zip(*pool_samples)
+            # Turn the list of pool states into a torch tensor
             pool_x = t.stack(pool_x).to(self.device)
+            # Turn the list of pool states into a torch tensor
             pool_states = t.stack(pool_states).to(self.device)
+            # Damage some of the pool states to train reconstruction
             pool_states[:self.n_damage] = self.damage(pool_states[:self.n_damage])
+            # Replace the last <n_pool_samples> entries in x with samples from the training pool
             x[-n_pool_samples:] = pool_x
 
-        q_z_given_x = self.encode(x) #.sg("Bz")
-        z = q_z_given_x.rsample((n_samples,)).permute((1, 0, 2)) #.sg("Bnz")
+        q_z_given_x = self.encode(x) # returns a tensor of shape (B,z)
+        z = q_z_given_x.rsample((n_samples,)).permute((1, 0, 2)) # returns a tensor of shape (B,n_samples,z)
 
         seeds = (z.reshape((-1, self.z_size))  # stuff samples into batch dimension
                  .unsqueeze(2)
                  .unsqueeze(3)
-                 .expand(-1, -1, self.h, self.w)) #.sg("bzhw"))
+                 .expand(-1, -1, self.h, self.w)) # returns a tensor of shape (b,z,h,w)
 
+        # If using pool training, replace the last <n_pool_samples> seed states with the sample states from the training pool
         if pool_states is not None:
-            seeds = seeds.clone()
+            seeds = seeds.clone() 
             seeds[-n_pool_samples:] = pool_states  # yes this is wrong and will mess up the gradient.
 
+        # Use the NCA to evolve the seed states of the batch of grids
         states = self.decode(seeds)
+        # Use the last state to get the conditional probability distribution
         p_x_given_z = self.state_to_dist(states[-1])
 
         loss, recon_loss, kl_loss = loss_fn(x, p_x_given_z, q_z_given_x, self.p_z, z)
@@ -203,7 +206,6 @@ class VNCA(Model):
         if kl_loss is not None:
             writer.add_scalar('kl_loss', kl_loss.mean().item(), self.batch_idx)
 
-        #ShapeGuard.reset()
         with t.no_grad():
             # samples
             samples = self.p_z.sample((8,)).view(8, -1, 1, 1).expand(8, -1, self.h, self.w).to(self.device)

@@ -12,17 +12,31 @@ class DiscretizedMixtureLogitsDistribution(Distribution):
         self.logits = logits
         self.nr_mix = nr_mix
         self._batch_shape = logits.shape
+        self.grad_fn = False
+    
+    def _is_view(*kwargs):
+        return False
 
-    def log_prob(self, value):
+    def log_prob(self, value:torch.Tensor):
+        """ 
+        Get the log-probability of the value under the distribution.
+        value -> Expected to have the same shape as the logits of the Distribution
+        """
         return - discretized_mix_logistic_loss(value * 2 - 1, self.logits).unsqueeze(1)  # add channel dim for compatibility with loss functions expecting bchw
 
     def sample(self):
+        """
+        Sample from the distribution
+        """
         return (sample_from_discretized_mix_logistic(self.logits, self.nr_mix) + 1) / 2
+    
+    def size(self):
+        return torch.zeros([1])
 
     @property
     def mean(self):
         """
-        Returns the mean of the distribution.
+        Returns the empirical mean of the distribution by averaging over 100 samples.
         """
         return torch.stack([self.sample() for _ in range(100)]).mean(dim=0)
 

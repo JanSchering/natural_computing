@@ -7,7 +7,7 @@ from torch.utils.data import Dataset
 
 # Dataset can be found and downloaded at "https://www.kaggle.com/datasets/kvpratama/pokemon-images-dataset/download"
 
-data_dir = os.path.join(os.getcwd(), "data_store", "archive", "pokemon", "pokemon")
+data_dir = os.path.join(os.getcwd(), "pokemon")
 
 def to_alpha(x):
   return torch.clip(x[3:4,...], 0.0, 1.0)
