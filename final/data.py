@@ -34,3 +34,12 @@ class PokemonIMG(Dataset):
 
     def __len__(self):
         return len(self.filenames)
+
+    def find(self, name):
+        img_name = os.path.join(data_dir,
+                                name)
+        image = self.transform(Image.fromarray(io.imread(img_name)))
+        #train_set[0][0][:3,:,:] *= train_set[0][0][3:,:,:]
+        image[:3,...] *= image[3:,...]
+        return to_rgb(image), 0  # placeholder label
+        
