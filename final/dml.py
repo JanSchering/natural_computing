@@ -8,7 +8,7 @@ from torch.distributions import Distribution
 class DiscretizedMixtureLogitsDistribution(Distribution):
     def __init__(self, nr_mix, logits):
         super().__init__()
-        print(f"logits shape{logits.shape}")
+        #print(f"logits shape{logits.shape}")
         self.logits = logits
         self.nr_mix = nr_mix
         self._batch_shape = logits.shape
@@ -223,13 +223,19 @@ def sample_from_discretized_mix_logistic_1d(l, nr_mix):
 
 def sample_from_discretized_mix_logistic(l, nr_mix):
     # Pytorch ordering
+    #print(f"l prev {l[0]}")
     l = l.permute(0, 2, 3, 1)
+    #print(f"l reshaped: {l[0]}")
     ls = [int(y) for y in l.size()]
+    #print(f"ls {ls}")
     xs = ls[:-1] + [3]
+    #print(f"xs {xs}")
 
     # unpack parameters
     logit_probs = l[:, :, :, :nr_mix]
+    #print(f"logit probs {logit_probs.shape}")
     l = l[:, :, :, nr_mix:].contiguous().view(xs + [nr_mix * 3])
+    #print(f"adjusted l: {l.shape}")
     # sample mixture indicator from softmax
     temp = torch.FloatTensor(logit_probs.size())
     if l.is_cuda: temp = temp.cuda()
@@ -241,6 +247,7 @@ def sample_from_discretized_mix_logistic(l, nr_mix):
     sel = one_hot.view(xs[:-1] + [1, nr_mix])
     # select logistic parameters
     means = torch.sum(l[:, :, :, :, :nr_mix] * sel, dim=4)
+    #print(f"means {means.shape}")
     log_scales = torch.clamp(torch.sum(
         l[:, :, :, :, nr_mix:2 * nr_mix] * sel, dim=4), min=-7.)
     coeffs = torch.sum(torch.tanh(
@@ -253,10 +260,13 @@ def sample_from_discretized_mix_logistic(l, nr_mix):
     u = Variable(u)
     x = means + torch.exp(log_scales) * (torch.log(u) - torch.log(1. - u))
     x0 = torch.clamp(torch.clamp(x[:, :, :, 0], min=-1.), max=1.)
+    #print(f"x0 {x0.shape}")
     x1 = torch.clamp(torch.clamp(
         x[:, :, :, 1] + coeffs[:, :, :, 0] * x0, min=-1.), max=1.)
+    #print(f"x1 {x1.shape}")
     x2 = torch.clamp(torch.clamp(
         x[:, :, :, 2] + coeffs[:, :, :, 1] * x0 + coeffs[:, :, :, 2] * x1, min=-1.), max=1.)
+    #print(f"x2 {x2.shape}")
 
     out = torch.cat([x0.view(xs[:-1] + [1]), x1.view(xs[:-1] + [1]), x2.view(xs[:-1] + [1])], dim=3)
     # put back in Pytorch ordering
