@@ -1,3 +1,6 @@
 .DS_Store
 final/pokemon/
 final/__pycache__/
+final/vae/__pycache__/
+final/vae/pokemon/
+final/vnca/pokemon/
