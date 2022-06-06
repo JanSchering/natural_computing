@@ -68,7 +68,7 @@ class VAE_SMALL(Model):
       self.test_set = test_data # appoint the test data
       self.train_loader = iter(DataLoader(IterableWrapper(train_data), batch_size=batch_size, pin_memory=True)) # initialize a data loader for the training data
       self.val_loader = iter(DataLoader(IterableWrapper(val_data), batch_size=batch_size, pin_memory=True)) # initialize a data loader for the validation data
-      self.train_writer, self.test_writer = get_writers("vae") # initialize a writer for the tensorboard
+      self.train_writer, self.test_writer = get_writers("vae_small") # initialize a writer for the tensorboard
 
       print(self) # report the model
       total = sum(p.numel() for p in self.parameters()) # calculate the total number of learnable parameters
