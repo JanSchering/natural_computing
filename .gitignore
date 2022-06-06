@@ -4,3 +4,7 @@ final/__pycache__/
 final/vae/__pycache__/
 final/vae/pokemon/
 final/vnca/pokemon/
+final/vae/tensorboardtrain/
+final/vae/tensorboardtest/
+final/vae/best
+final/vae/latest 
