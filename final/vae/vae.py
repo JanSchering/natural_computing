@@ -115,7 +115,8 @@ class VAE(Model):
         self.train(False) # set the training mode to False
         with t.no_grad():
             total_loss = 0.0 # initialize the total loss
-            for x, y in tqdm.tqdm(self.test_set): # iterate over the whole test set 
+            for x, y in tqdm.tqdm(self.test_set): # iterate over the whole test set
+                x = x.unsqueeze(0) 
                 loss, z, p_x_given_z, recon_loss, kl_loss, states = self.forward(x, n_iw_samples, iwae) # forward a single sample of the testing data through the network 
                 total_loss += loss.mean().item() # add the mean of the loss to the total loss
 

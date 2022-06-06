@@ -7,4 +7,6 @@ final/vnca/pokemon/
 final/vae/tensorboardtrain/
 final/vae/tensorboardtest/
 final/vae/best
-final/vae/latest 
+final/vae/latest
+final/vnca/TBtrain/
+final/vnca/TBtest/
