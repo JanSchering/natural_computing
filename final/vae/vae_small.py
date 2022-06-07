@@ -1,3 +1,5 @@
+from os import getcwd
+from os.path import join
 from typing import Sequence, Tuple
 import tqdm
 import numpy as np
@@ -120,6 +122,8 @@ class VAE_SMALL(Model):
                 total_loss += loss.mean().item() # add the mean of the loss to the total loss
 
         print(total_loss / len(self.test_set)) # return the average loss of the test set
+        with open(join(getcwd(), "vae_small", "data", "test.txt"), "w") as f:
+            f.write(total_loss / len(self.test_set))
 
     def encode(self, x) -> Distribution:  # q(z|x)
         # q = self.encoder(x) # run the encoder and retunrs a vector of size 2 * the latent space 
