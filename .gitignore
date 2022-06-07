@@ -10,5 +10,7 @@ final/vae/best
 final/vae/latest
 final/vnca/TBtrain/
 final/vnca/TBtest/
-final/vae/vae/
-final/vae/vae_small/
+final/vae/vae/train/
+final/vae/vae/test/
+final/vae/vae_small/train/
+final/vae/vae_small/test/
