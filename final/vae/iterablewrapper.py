@@ -1,5 +1,7 @@
 import random
-from torch.utils.data import DataLoader, Dataset, IterableDataset
+from torch.utils.data import Dataset, IterableDataset
+
+# -------- Taken from https://github.com/rasmusbergpalm/vnca/blob/main/modules/iterable_dataset_wrapper.py
 
 class IterableWrapper(IterableDataset):
     """

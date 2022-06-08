@@ -33,7 +33,7 @@ class PokemonIMG(Dataset):
         # Turn images into a torch tensor and resize to (self.h, self.w)
         self.transform = transforms.Compose([transforms.Resize((self.h, self.w)), transforms.ToTensor()])
 
-    def __getitem__(self, index:int):
+    def __getitem__(self, index:int) -> torch.Tensor:
         """
         Return the image from the dataset at the given index
         """
@@ -53,7 +53,7 @@ class PokemonIMG(Dataset):
         """
         return len(self.filenames)
 
-    def find(self, name:str):
+    def find(self, name:str) -> torch.Tensor:
         """
         Find an entry in the dataset based on the name of the image file it was taken from
         name (str): The name of the image file.

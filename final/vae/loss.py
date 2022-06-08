@@ -1,6 +1,8 @@
 import torch as t
 from torch.distributions import Distribution, kl_divergence
 
+# -------------- Orignal taken from https://github.com/rasmusbergpalm/vnca/blob/main/modules/loss.py
+
 def iwae(x: t.Tensor, p_x_given_z: Distribution, q_z_given_x: Distribution, p_z: Distribution, z: t.Tensor):
     """
         log(p(x)) >= logsumexp_{i=1}^N[ log(p(x|z_i)) + log(p(z_i)) - log(q(z_i|x))] - log(N)

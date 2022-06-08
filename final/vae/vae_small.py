@@ -11,14 +11,13 @@ from torch import optim
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
 
-
 from iterablewrapper import IterableWrapper
 from loss import elbo, iwae
 from model import Model
 from tb import get_writers
 
-filter_size = 5
-pad = filter_size // 2
+filter_size = 5 # Size of the Convolutional filter to use for the encoder/decoder networks
+pad = filter_size // 2 # Padding to be applied in the convolutional layers
 
 class VAE_SMALL(Model):
     
@@ -32,10 +31,7 @@ class VAE_SMALL(Model):
                   test_data: Dataset,
                   states_to_dist,
                   batch_size: int,
-                  p_update: float,
-                  min_steps: int,
-                  max_steps: int, 
-                  encoder_hid
+                  encoder_hid:int
                   ):
       super(Model, self).__init__()
       self.h = h # height of the image
@@ -51,7 +47,7 @@ class VAE_SMALL(Model):
       self.conv2d4 = nn.Conv2d(encoder_hid * 2 ** 2, encoder_hid * 2 ** 3, filter_size, padding=pad, stride=2) # (bs, 256, h//8, w//8)
       self.elu = nn.ELU()
       self.flatten = nn.Flatten()  # (bs, 256*h//8*w//8)
-      self.linear = nn.Linear(encoder_hid * (2 ** 3) * h // 8 * w // 8, 2 * z_size)
+      self.linear = nn.Linear(encoder_hid * (2 ** 3) * h // 8 * w // 8, 2 * z_size) # (bs, 512)
 
       self.dec_lin = nn.Linear(z_size, (encoder_hid * 2 ** 4) * 4)
       
@@ -61,9 +57,6 @@ class VAE_SMALL(Model):
       self.conv_t2d4 = nn.ConvTranspose2d(encoder_hid * 2 ** 1, encoder_hid * 2 ** 0, filter_size, padding=pad, stride=2, output_padding=1)
       self.conv_t2d5 = nn.ConvTranspose2d(encoder_hid * 2 ** 0, 10, filter_size, padding=pad)
 
-      # self.encoder = encoder # define the encoder
-      # self.decoder_linear = decoder_linear # define the linear decoder
-      # self.decoder = decoder # define the decoder
       self.unflatten = nn.Unflatten(-1, (encoder_hid * 2 ** 4, h // 16, w // 16))
       self.p_z = Normal(t.zeros(self.z_size, device=self.device), t.ones(self.z_size, device=self.device)) # defines a 0 mean prior distribution for the latent space
 

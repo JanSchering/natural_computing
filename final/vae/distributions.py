@@ -4,6 +4,8 @@ from torch.distributions import Distribution
 import torch.nn.functional as F
 import numpy as np
 
+# ------------- Original can be found at https://github.com/rasmusbergpalm/vnca/blob/main/modules/dml.py
+
 class DiscretizedMixtureLogitsDistribution(Distribution):
     def __init__(self, nr_mix, logits):
         super().__init__()
@@ -20,7 +22,7 @@ class DiscretizedMixtureLogitsDistribution(Distribution):
     @property
     def mean(self):
         """
-        Returns the mean of the distribution.
+        Returns the empirical mean of the distribution taken over 100 samples.
         """
         return torch.stack([self.sample() for _ in range(100)]).mean(dim=0)
 

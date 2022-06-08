@@ -1,7 +1,7 @@
 import tqdm
 from model import Model
 
-def train(model: Model, n_updates=int(1e6), eval_interval=1000, suffix:str="VAE"):
+def train(model: Model, n_updates=int(1e6), eval_interval=1000, suffix:str="VAE") -> None:
     best = float("inf")
     for i in tqdm.tqdm(range(n_updates)):
         model.train_batch()
