@@ -75,11 +75,21 @@ class VAE_SMALL(Model):
       self.optimizer = optim.Adam(self.parameters(), lr=1e-4) # initialize the ADAM optimizer
       self.batch_idx = 0 # initalize the batch index to 0
 
-    def to_rgb(self, state):
+    def to_rgb(self, state:t.Tensor) -> Tuple[t.Tensor, t.Tensor]:
+        """
+        Produces an image based on the state of the NCA vector-grid.
+        state (t.Tensor): The current state of the NCA.
+        """
+        # Get mixture of logisitcs distribution conditioned on the hidden states of the NCA.
         dist: Distribution = self.state_to_dist(state)
+        # Sample an image from the conditional distribution
         return dist.sample(), dist.mean
 
-    def train_batch(self):
+    def train_batch(self) -> float:
+        """
+        Train the update network of the VNCA on a batch of data from the training set.
+        Returns the mean of the loss achieved on the batch.
+        """
         self.train(True) # set the training mode to True
 
         self.optimizer.zero_grad() # remove prior gradients from the mmodel
@@ -119,25 +129,12 @@ class VAE_SMALL(Model):
             f.write(total_loss / len(self.test_set))
 
     def encode(self, x) -> Distribution:  # q(z|x)
-        # q = self.encoder(x) # run the encoder and retunrs a vector of size 2 * the latent space 
-
-        # print("encoder", x.shape)
-        q = self.conv2d1(x)
-        # print("conv2d1", q.shape)
-        q = self.elu(q)
-        q = self.conv2d2(q)
-        # print("conv2d2", q.shape)
-        q = self.elu(q)
-        q = self.conv2d3(q)
-        # print("conv2d3", q.shape)
-        q = self.elu(q)
-        q = self.conv2d4(q)
-        # print("conv2d4", q.shape)
-        q = self.elu(q)
+        q = self.elu(self.conv2d1(x))
+        q = self.elu(self.conv2d2(q))
+        q = self.elu(self.conv2d3(q))
+        q = self.elu(self.conv2d4(q))
         q = self.flatten(q)
-        # print("flatten", q.shape)
         q = self.linear(q)
-        # print("linear", q.shape)
       
         loc = q[:, :self.z_size] # mean of the latent distribution
         logsigma = q[:, self.z_size:] # log variance of the latent ditribution
@@ -145,30 +142,16 @@ class VAE_SMALL(Model):
         return Normal(loc=loc, scale=t.exp(logsigma)) # return a normal distribution with the mean and variance received from the encoder
 
     def decode(self, z: t.Tensor) -> Tuple[Distribution, Sequence[t.Tensor]]:  # p(x|z)
-        # flat_features = self.decoder_linear(z)
-
-        # print("decoder", z.shape)
         flat_features = self.dec_lin(z)
-        # print("flat_features", flat_features.shape)
         flat_features = t.squeeze(flat_features)
-        #print("squeezed", flat_features.shape)
-        unflattened = self.unflatten(flat_features)
-        #print("unflattened", unflattened.shape)
 
-        unflattened = self.conv_t2d1(unflattened)
-        # print("conv_t2d1", unflattened.shape)
-        unflattened = self.elu(unflattened)
-        unflattened = self.conv_t2d2(unflattened)
-        #print("conv_t2d2", unflattened.shape)
-        unflattened = self.elu(unflattened)
-        unflattened = self.conv_t2d3(unflattened)
-        #print("conv_t2d3", unflattened.shape)
-        unflattened = self.elu(unflattened)
-        unflattened = self.conv_t2d4(unflattened)
-        #print("conv_t2d4", unflattened.shape)
-        unflattened = self.elu(unflattened)
+        unflattened = self.unflatten(flat_features)
+
+        unflattened = self.elu(self.conv_t2d1(unflattened))
+        unflattened = self.elu(self.conv_t2d2(unflattened))
+        unflattened = self.elu(self.conv_t2d3(unflattened))
+        unflattened = self.elu(self.conv_t2d4(unflattened))
         unflattened = self.conv_t2d5(unflattened)
-        #print("conv_t2d5", unflattened.shape)
 
         return unflattened # run the decoder
 
