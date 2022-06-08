@@ -8,6 +8,8 @@ final/vae/tensorboardtrain/
 final/vae/tensorboardtest/
 final/vae/best
 final/vae/latest
+final/vae/best_VAE
+final/vae/latest_VAE
 final/vnca/TBtrain/
 final/vnca/TBtest/
 final/vae/vae/train/
