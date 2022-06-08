@@ -77,10 +77,10 @@ class VAE_SMALL(Model):
 
     def to_rgb(self, state:t.Tensor) -> Tuple[t.Tensor, t.Tensor]:
         """
-        Produces an image based on the state of the NCA vector-grid.
-        state (t.Tensor): The current state of the NCA.
+        Produces an image based on the latent code from the encoder.
+        state (t.Tensor): Latent.
         """
-        # Get mixture of logisitcs distribution conditioned on the hidden states of the NCA.
+        # Get mixture of logisitcs distribution conditioned on the latent code from the encoder.
         dist: Distribution = self.state_to_dist(state)
         # Sample an image from the conditional distribution
         return dist.sample(), dist.mean
