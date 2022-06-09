@@ -1,3 +1,5 @@
+from os import getcwd
+from os.path import join
 import os, sys
 
 import random
@@ -18,9 +20,6 @@ from loss import elbo, iwae
 from model import Model
 from nca import NCA
 from util import get_writers
-
-
-# torch.autograd.set_detect_anomaly(True)
 
 class VNCA(Model):
     def __init__(self,
@@ -72,7 +71,11 @@ class VNCA(Model):
         self.optimizer = optim.Adam(self.parameters(), lr=1e-4) # initialize the ADAM optimizer
         self.batch_idx = 0 # initalize the batch index to 0
 
-    def train_batch(self):
+    def train_batch(self) -> float:
+        """
+        Train the Update Network on a batch of data from the training set.
+        Returns the mean of the loss achieved on the batch.
+        """
         self.train(True)
 
         self.optimizer.zero_grad()
@@ -90,7 +93,11 @@ class VNCA(Model):
         self.batch_idx += 1
         return loss.mean().item()
 
-    def eval_batch(self):
+    def eval_batch(self) -> float:
+        """
+        Evaluate the VNCA on a batch of data from the validation set using Importance Weighted Autoencoder (IWAE-)loss.
+        Returns the mean of the loss achieved on the validation batch.
+        """
         self.train(False)
         with t.no_grad():
             x, y = next(self.val_loader)
@@ -99,6 +106,11 @@ class VNCA(Model):
         return loss.mean().item()
 
     def test(self, n_iw_samples):
+        """
+        Test the performance of the VNCA on the test set using Importance Weighted Autoencoder (IWAE-)loss.
+        Returns the mean of the loss achieved on the test set.
+        n_iw_samples: The number of importance weighted samples to use for the IWAE-loss.
+        """
         self.train(False)
         with t.no_grad():
             total_loss = 0.0
@@ -107,9 +119,17 @@ class VNCA(Model):
                 loss, z, p_x_given_z, recon_loss, kl_loss, states = self.forward(x, n_iw_samples, iwae)
                 total_loss += loss.mean().item()
 
-        print(total_loss / len(self.test_set))
+        avg_loss = total_loss / len(self.test_set) # average loss of the test set
+        print(avg_loss)
+        # Save the average test loss to a text file
+        with open(join(getcwd(), "test.txt"), "w") as f:
+            f.write(avg_loss)
 
-    def to_rgb(self, state):
+    def to_rgb(self, state:t.Tensor) -> t.Tensor:
+        """
+        Produces an image based on the state of the NCA.
+        state (t.Tensor): state of the NCA.
+        """
         dist: Distribution = self.state_to_dist(state)
         return dist.sample(), dist.mean
 
