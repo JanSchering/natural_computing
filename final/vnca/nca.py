@@ -1,3 +1,4 @@
+from typing import List
 import random
 
 import torch as t
@@ -6,7 +7,7 @@ from torch.utils.checkpoint import checkpoint
 
 class NCA(t.nn.Module):
 
-    def __init__(self, update_net: t.nn.Module, min_steps, max_steps, p_update=0.5):
+    def __init__(self, update_net: t.nn.Module, min_steps:int, max_steps:int, p_update=0.5):
         super().__init__()
         self.min_steps = min_steps
         self.max_steps = max_steps
@@ -14,28 +15,20 @@ class NCA(t.nn.Module):
         self.update_net = update_net
         self.p_update = p_update
 
-    def step(self, state, rand_update_mask):
-        # pre_alive_mask = self.alive_mask(state)
-
+    def step(self, state:t.Tensor, rand_update_mask:t.Tensor) -> t.Tensor:
+        """
+        Simulate a step of the NCA from the given state, using the update mask.
+        Returns the next state of the NCA.
+        """
         update = self.update_net(state)
         state = (state + update * rand_update_mask)
-
-        # post_alive_mask = self.alive_mask(state)
-        state = state  # * (post_alive_mask * pre_alive_mask)
-
         return state
 
-    """
-    def alive_mask(self, state):
-        x = max_pool2d(state[:, 0:1], kernel_size=(3, 3), stride=1, padding=1)
-        hard = (t.sigmoid(x - 6.0) > 0.1).to(t.float32)
-        soft = x  # t.sigmoid(x - 6.0 - t.logit(t.tensor(0.1)))
-        out = hard + soft - soft.detach()
-
-        return out
-    """
-
-    def forward(self, state):
+    def forward(self, state:t.Tensor) -> List[t.Tensor]:
+        """
+        Forward a state through the NCA - Perform a sequence of [<min_steps>, <max_steps>] update steps of the given NCA state.
+        Returns the sequence of updated states.
+        """
         states = [state]
 
         for j in range(random.randint(self.min_steps, self.max_steps)):
