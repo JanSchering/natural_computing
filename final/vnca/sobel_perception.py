@@ -2,7 +2,9 @@ import torch as t
 
 
 class SobelConv(t.nn.Module):
-
+    """
+    Convolutional network layer where the filter is fixed to a sobel convolution.
+    """
     def __init__(self, channels_in, device):
         super().__init__()
         self.channels_in = channels_in
