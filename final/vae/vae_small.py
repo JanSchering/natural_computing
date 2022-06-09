@@ -1,6 +1,6 @@
 from os import getcwd
 from os.path import join
-from typing import Sequence, Tuple
+from typing import Callable, Sequence, Tuple
 import tqdm
 import numpy as np
 
@@ -15,6 +15,9 @@ from iterablewrapper import IterableWrapper
 from loss import elbo, iwae
 from model import Model
 from tb import get_writers
+
+Loss_Function = Callable[[t.Tensor,Distribution, Distribution, Distribution, t.Tensor], Tuple[float, float, float]]
+Report = Tuple[float, t.Tensor, Distribution, float, float, t.Tensor]
 
 filter_size = 5 # Size of the Convolutional filter to use for the encoder/decoder networks
 pad = filter_size // 2 # Padding to be applied in the convolutional layers
@@ -75,19 +78,19 @@ class VAE_SMALL(Model):
       self.optimizer = optim.Adam(self.parameters(), lr=1e-4) # initialize the ADAM optimizer
       self.batch_idx = 0 # initalize the batch index to 0
 
-    def to_rgb(self, state:t.Tensor) -> Tuple[t.Tensor, t.Tensor]:
+    def to_rgb(self, latent_sample:t.Tensor) -> Tuple[t.Tensor, t.Tensor]:
         """
         Produces an image based on the latent code from the encoder.
-        state (t.Tensor): Latent.
+        latent_sample (t.Tensor): latent sample.
         """
         # Get mixture of logisitcs distribution conditioned on the latent code from the encoder.
-        dist: Distribution = self.state_to_dist(state)
+        dist: Distribution = self.state_to_dist(latent_sample)
         # Sample an image from the conditional distribution
         return dist.sample(), dist.mean
 
     def train_batch(self) -> float:
         """
-        Train the update network of the VNCA on a batch of data from the training set.
+        Train the Encoder/Decoder on a batch of data from the training set.
         Returns the mean of the loss achieved on the batch.
         """
         self.train(True) # set the training mode to True
@@ -107,7 +110,11 @@ class VAE_SMALL(Model):
         self.batch_idx += 1 # increment the batch index
         return loss.mean().item() 
     
-    def eval_batch(self):
+    def eval_batch(self) -> float:
+        """
+        Evaluate the VAE on a batch of data from the validation set using Importance Weighted Autoencoder (IWAE-)loss.
+        Returns the mean of the loss achieved on the validation batch.
+        """
         self.train(False) # set the training mode to False
         with t.no_grad():
             x, y = next(self.val_loader) # load a batch of validation data
@@ -115,7 +122,12 @@ class VAE_SMALL(Model):
             self.report(self.test_writer, state, loss, recon_loss, kl_loss) # report on the results
         return loss.mean().item()
 
-    def test(self, n_iw_samples):
+    def test(self, n_iw_samples:int) -> float:
+        """
+        Test the performance of the VAE on the test set using Importance Weighted Autoencoder (IWAE-)loss.
+        Returns the mean of the loss achieved on the test set.
+        n_iw_samples: The number of importance weighted samples to use for the IWAE-loss.
+        """
         self.train(False) # set the training mode to False
         with t.no_grad():
             total_loss = 0.0 # initialize the total loss
@@ -124,11 +136,18 @@ class VAE_SMALL(Model):
                 loss, z, p_x_given_z, recon_loss, kl_loss, states = self.forward(x, n_iw_samples, iwae) # forward a single sample of the testing data through the network 
                 total_loss += loss.mean().item() # add the mean of the loss to the total loss
 
-        print(total_loss / len(self.test_set)) # return the average loss of the test set
+        avg_loss = total_loss / len(self.test_set) # average loss of the test set
+        print(avg_loss)
+        # Save the average test loss to a text file
         with open(join(getcwd(), "vae_small", "data", "test.txt"), "w") as f:
-            f.write(total_loss / len(self.test_set))
+            f.write(avg_loss)
 
-    def encode(self, x) -> Distribution:  # q(z|x)
+    def encode(self, x:t.Tensor) -> Distribution:  # q(z|x)
+        """
+        Forward a batch of images of shape (bs, self.h, self.w, 3) through the encoder network
+        and return a conditional latent distribution q(z|x).
+        x (t.Tensor): The image.
+        """
         q = self.elu(self.conv2d1(x))
         q = self.elu(self.conv2d2(q))
         q = self.elu(self.conv2d3(q))
@@ -141,7 +160,11 @@ class VAE_SMALL(Model):
         
         return Normal(loc=loc, scale=t.exp(logsigma)) # return a normal distribution with the mean and variance received from the encoder
 
-    def decode(self, z: t.Tensor) -> Tuple[Distribution, Sequence[t.Tensor]]:  # p(x|z)
+    def decode(self, z: t.Tensor) -> t.Tensor: 
+        """
+        Forward a latent sample through the decoder network and returns the parameters of a
+        conditional distribution over the image space.
+        """
         flat_features = self.dec_lin(z)
         flat_features = t.squeeze(flat_features)
 
@@ -155,7 +178,14 @@ class VAE_SMALL(Model):
 
         return unflattened # run the decoder
 
-    def forward(self, x, n_samples, loss_fn):
+    def forward(self, x:t.Tensor, n_samples:int, loss_fn:Loss_Function) -> Report:
+        """
+        Forward an image through the VAE model.
+        x (t.Tensor): The image to forward through the model.
+        n_samples (int): The number of samples to use from the conditional latent distribution.
+        loss_fn (Loss_Function): The function to calculate the loss of the model on the image.
+        Returns (loss, latent samples, conditional posterior distribution, reconstruction loss, kl-divergence, posterior params
+        """
         x = x.to(self.device) # move the pytorch tensor to the gpu if possible
 
         q_z_given_x = self.encode(x) # run the encoder to receive the conditional latent distribution
