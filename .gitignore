@@ -16,3 +16,5 @@ final/vae/vae/train/
 final/vae/vae/test/
 final/vae/vae_small/train/
 final/vae/vae_small/test/
+final/vnca/latest
+final/vnca/__pycache__/
