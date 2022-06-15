@@ -1,9 +1,6 @@
-import os, sys
-import torch as t
+import torch
 import math
 from torch import nn
-from torch.nn import DataParallel
-from torchvision import transforms, datasets
 
 from dml import DiscretizedMixtureLogitsDistribution
 from residual import Residual
@@ -27,10 +24,16 @@ h = w = 32
 n_channels = 3
 
 
-def state_to_dist(state):
+def state_to_dist(state:torch.Tensor) -> DiscretizedMixtureLogitsDistribution:
+    """
+    Turns the state of the NCA into a Mixture of Logistics distribution, using the first 10 dimensions of the vector-grid.
+    """
     return DiscretizedMixtureLogitsDistribution(n_mixtures, state[:, :n_mixtures * 10, :, :])
 
 def init_vnca() -> VNCA:
+    """
+    Instantiate a VNCA model
+    """
     encoder = nn.Sequential(
         nn.Conv2d(n_channels, encoder_hid * 2 ** 0, filter_size, padding=pad), nn.ELU(),  # (bs, 32, h, w)
         nn.Conv2d(encoder_hid * 2 ** 0, encoder_hid * 2 ** 1, filter_size, padding=pad, stride=2), nn.ELU(),  # (bs, 64, h//2, w//2)
@@ -80,7 +83,7 @@ def init_vnca() -> VNCA:
     num_test = math.floor(num_samples*test_split)
     num_test = num_test + (num_samples - num_train - num_val - num_test)
 
-    train_set, val_set, test_set = t.utils.data.random_split(dset, [num_train, num_val, num_test])
+    train_set, val_set, test_set = torch.utils.data.random_split(dset, [num_train, num_val, num_test])
 
     vnca = VNCA(h, w, n_channels, z_size, encoder, update_net, train_set, val_set, test_set, state_to_dist, batch_size, dmg_size, p_update, min_steps, max_steps)
 
