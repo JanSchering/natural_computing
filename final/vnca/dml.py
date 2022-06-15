@@ -5,6 +5,8 @@ from torch.autograd import Variable
 from torch.distributions import Distribution
 
 
+# ------------- Taken from https://github.com/rasmusbergpalm/vnca/blob/main/modules/dml.py
+
 class DiscretizedMixtureLogitsDistribution(Distribution):
     def __init__(self, nr_mix, logits):
         super().__init__()
