@@ -21,7 +21,7 @@ from model import Model
 from nca import NCA
 from util import get_writers
 
-# ------------------ Original can be found at https://github.com/rasmusbergpalm/vnca/blob/main/modules/vnca.py
+# ------------------ Adjusted from https://github.com/rasmusbergpalm/vnca/blob/main/modules/vnca.py
 
 class VNCA(Model):
     def __init__(self,
