@@ -4,6 +4,7 @@ import random
 import torch as t
 from torch.utils.checkpoint import checkpoint
 
+# -------- Taken from https://github.com/rasmusbergpalm/vnca/blob/main/modules/nca.py
 
 class NCA(t.nn.Module):
 

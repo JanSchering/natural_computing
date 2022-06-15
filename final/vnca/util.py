@@ -5,11 +5,10 @@ from datetime import datetime
 
 from torch.utils.tensorboard import SummaryWriter
 
-revision = "%s" % datetime.now()
 tensorboard_dir = join(getcwd(), "TB")
 flush_secs = 10
 
-# ---------- Based off https://github.com/rasmusbergpalm/vnca/blob/main/util.py
+# ---------- Adjusted from https://github.com/rasmusbergpalm/vnca/blob/main/util.py
 
 def get_writers() -> Tuple[SummaryWriter, SummaryWriter]:
     """

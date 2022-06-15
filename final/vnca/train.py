@@ -2,6 +2,7 @@ import tqdm
 
 from model import Model
 
+# ---------- Taken from https://github.com/rasmusbergpalm/vnca/blob/main/train.py
 
 def train(model: Model, n_updates=int(1e6), eval_interval=1000):
     best = float("inf")

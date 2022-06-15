@@ -1,5 +1,6 @@
 import torch as t
 
+# ---------- Adjusted from https://github.com/rasmusbergpalm/vnca/blob/main/modules/residual.py
 
 class Residual(t.nn.Module):
     """

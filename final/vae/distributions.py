@@ -4,7 +4,7 @@ from torch.distributions import Distribution
 import torch.nn.functional as F
 import numpy as np
 
-# ------------- Original can be found at https://github.com/rasmusbergpalm/vnca/blob/main/modules/dml.py
+# ------------- Adjusted from https://github.com/rasmusbergpalm/vnca/blob/main/modules/dml.py
 
 class DiscretizedMixtureLogitsDistribution(Distribution):
     def __init__(self, nr_mix, logits):

@@ -1,5 +1,6 @@
 import torch as t
 
+# --------- Taken from https://github.com/rasmusbergpalm/vnca/blob/main/modules/model.py
 
 class Model(t.nn.Module):
 

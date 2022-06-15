@@ -1,8 +1,10 @@
+from typing import Tuple
 import torch as t
 from torch.distributions import Distribution, kl_divergence
 
+# -------------- Adjusted from https://github.com/rasmusbergpalm/vnca/blob/main/modules/loss.py
 
-def iwae(x: t.Tensor, p_x_given_z: Distribution, q_z_given_x: Distribution, p_z: Distribution, z: t.Tensor):
+def iwae(x: t.Tensor, p_x_given_z: Distribution, q_z_given_x: Distribution, p_z: Distribution, z: t.Tensor) -> Tuple[float, None, None]:
     """
         log(p(x)) >= logsumexp_{i=1}^N[ log(p(x|z_i)) + log(p(z_i)) - log(q(z_i|x))] - log(N)
 
@@ -26,7 +28,7 @@ def iwae(x: t.Tensor, p_x_given_z: Distribution, q_z_given_x: Distribution, p_z:
     return -logpx, None, None
 
 
-def elbo(x: t.Tensor, p_x_given_z: Distribution, q_z_given_x: Distribution, p_z: Distribution, z: t.Tensor):
+def elbo(x: t.Tensor, p_x_given_z: Distribution, q_z_given_x: Distribution, p_z: Distribution, z: t.Tensor) -> Tuple[float, float, float]:
     """
         log p(x) >= E_q(z|x) [ log p(x|z) p(z) / q(z|x) ]
         Reconstruction + KL divergence losses summed over all elements and batch
