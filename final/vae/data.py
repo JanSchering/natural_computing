@@ -1,5 +1,4 @@
 import os
-import numpy as np
 import torch
 from skimage import io
 from PIL import Image
@@ -12,21 +11,23 @@ data_dir = os.path.join(os.getcwd(), "pokemon")
 
 
 # ---------------- Taken from https://colab.research.google.com/github/google-research/self-organising-systems/blob/master/notebooks/growing_ca.ipynb
-def to_alpha(x):
-  return torch.clip(x[3:4,...], 0.0, 1.0)
+def to_alpha(x:torch.Tensor):
+    return torch.clip(x[3:4,...], 0.0, 1.0)
 
-def to_rgb(x:np.ndarray):
-  """
-  Removes the residuals of the alpha channel from an RGBA channel
-  x (np.ndarray): RGBA image where the RGB channels got pre-multiplied with the alpha channel
-  """
-  # assume rgb premultiplied by alpha
-  rgb, a = x[:3,...], to_alpha(x)
-  return 1.0-a+rgb
+def to_rgb(x:torch.Tensor):
+    """
+    Removes the residuals of the alpha channel from an RGBA channel
+    x (torch.Tensor): RGBA image where the RGB channels got pre-multiplied with the alpha channel
+    """
+    # assume rgb premultiplied by alpha
+    rgb, a = x[:3,...], to_alpha(x)
+    return 1.0-a+rgb
 # ------------------------------------------
 
 class PokemonIMG(Dataset):
-
+    """
+    Dataset containing 32x32 RGB images of 819 pokemon.
+    """
     def __init__(self):
         self.filenames = os.listdir(data_dir)
         self.h = self.w = 32
