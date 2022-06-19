@@ -124,7 +124,7 @@ class VAE(Model):
 
         print(total_loss / len(self.test_set)) # return the average loss of the test set
         with open(join(getcwd(), "vae", "data", "test.txt"), "w") as f:
-            f.write(total_loss / len(self.test_set))
+            f.write(str(total_loss / len(self.test_set)))
 
     def encode(self, x) -> Distribution:  # q(z|x)
         # q = self.encoder(x) # run the encoder and retunrs a vector of size 2 * the latent space 

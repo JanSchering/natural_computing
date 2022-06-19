@@ -18,7 +18,8 @@ class Model(t.nn.Module):
         }, fn)
 
     def load(self, fn):
-        checkpoint = t.load(fn, map_location=t.device(self.device))
+        #checkpoint = t.load(fn, map_location=t.device(self.device))
+        checkpoint = t.load(fn, map_location=lambda storage, loc: storage)
         self.batch_idx = checkpoint["batch_idx"]
         self.load_state_dict(checkpoint["model_state_dict"])
-        self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        #self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])

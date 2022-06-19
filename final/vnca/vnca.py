@@ -118,14 +118,14 @@ class VNCA(Model):
             total_loss = 0.0
             for x, y in tqdm.tqdm(self.test_set):
                 x = x.unsqueeze(0)
-                loss, z, p_x_given_z, recon_loss, kl_loss, states = self.forward(x, n_iw_samples, iwae)
+                loss, _, _, _, _, _ = self.forward(x, n_iw_samples, iwae, test=True)
                 total_loss += loss.mean().item()
 
-        avg_loss = total_loss / len(self.test_set) # average loss of the test set
+            avg_loss = total_loss / len(self.test_set) # average loss of the test set
         print(avg_loss)
         # Save the average test loss to a text file
         with open(join(getcwd(), "test.txt"), "w") as f:
-            f.write(avg_loss)
+            f.write(str(avg_loss))
 
     def to_rgb(self, state:t.Tensor) -> t.Tensor:
         """
@@ -143,9 +143,9 @@ class VNCA(Model):
         logsigma = q[:, self.z_size:] # The log variance of the normal distribution is given by the last <z> entries in <q>
         return Normal(loc=loc, scale=t.exp(logsigma)) # Conditional Normal distribution over the latent space using the mean and variance from the encoder
 
-    def decode(self, z: t.Tensor) -> List[t.Tensor]:  # p(x|z)
+    def decode(self, z: t.Tensor, test) -> List[t.Tensor]:  # p(x|z)
         # z should be of shape (B,z,h,w)
-        return self.nca(z)
+        return self.nca(z, test)
 
     def damage(self, states):
         # states should be of shape (*,z,h,w) -> a set of NCA grid states to be damaged
@@ -161,7 +161,7 @@ class VNCA(Model):
         # Damage the states using the created mask
         return states * mask
 
-    def forward(self, x, n_samples, loss_fn):
+    def forward(self, x, n_samples, loss_fn, test=False):
         # x should be of shape (B,c,h,w)
         x = x.to(self.device)
 
@@ -200,7 +200,7 @@ class VNCA(Model):
             seeds[-n_pool_samples:] = pool_states  # yes this is wrong and will mess up the gradient.
 
         # Use the NCA to evolve the seed states of the batch of grids
-        states = self.decode(seeds)
+        states = self.decode(seeds, test)
         # Use the last state to get the conditional probability distribution
         p_x_given_z = self.state_to_dist(states[-1])
 

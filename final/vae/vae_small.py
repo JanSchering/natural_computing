@@ -140,7 +140,7 @@ class VAE_SMALL(Model):
         print(avg_loss)
         # Save the average test loss to a text file
         with open(join(getcwd(), "vae_small", "data", "test.txt"), "w") as f:
-            f.write(avg_loss)
+            f.write(str(avg_loss))
 
     def encode(self, x:t.Tensor) -> Distribution:  # q(z|x)
         """
