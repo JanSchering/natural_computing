@@ -190,7 +190,8 @@ class VAE(Model):
         z = q_z_given_x.rsample((n_samples,)).permute((1, 0, 2)) # sample from the conditional latent distribution
 
         state = self.decode(z) # decode the sample
-        # print(state.shape)
+        if len(state.shape) == 3:
+            state = state.unsqueeze(0)
         p_x_given_z = self.state_to_dist(state) # get the conditional probability distribution using the state
 
         loss, recon_loss, kl_loss = loss_fn(x, p_x_given_z, q_z_given_x, self.p_z, z) # calculate the loss using the two distributions
