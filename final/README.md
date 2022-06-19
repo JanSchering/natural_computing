@@ -37,18 +37,20 @@ final
 │   
 ```
 
-## 2. Installing Dependencies
-We recommend using Conda to manage the Python dependencies. Conda can be downloaded at https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html. Follow the installation instruction to set up Conda on your device. Afterwards, all dependencies for this project can be installed through running following command in a Conda terminal:
+## 2. Dependencies
 
-`conda create -n vnca_env --file package-list.txt`
+- current version of pytorch: https://pytorch.org/ for installation advice
+- matplotlib: `pip install matplotlib`
+- tqdm: `pip install tqdm`
+- pandas: `pip install pandass`
+- numpy: `pip install numpy`
+- jupyter: `pip install jupyter`
+- tensorboard: `pip install tensorboard`
 
-Once the installation of the packages is concluded, the new environment with the installed dependencies can be accessed through running:
-
-`conda activate vnca_env`
 
 ## 3. Using the VNCA
 
-To run the VNCA, open a Conda terminal and activate the environment for the project (see 2.). Navigate into the VNCA directory. The model can be trained from scratch by running:
+Navigate into the VNCA directory. The model can be trained from scratch by running:
 
 `python main.py`
 
@@ -56,11 +58,11 @@ The training progress can be visualized by running in additional terminal:
 
 `tensorboard --logdir TBtrain`
 
-To use the trained model, refer to `vnca/presentation_vis.ipynb` for examples
+To use the trained model, refer to `vnca/usage.ipynb` for examples
 
 ## 4. Using the VAE
 
-To run the VNCA, open a Conda terminal and activate the environment for the project (see 2.). Navigate into the VAE directory. Here, a choice can be made:
+Navigate into the VAE directory. Here, a choice can be made:
 
 - To train a smaller VAE from scratch, use `VAE_small_pokemon.ipynb`
 - To train a larger VAE from scratch, use `VAE_pokemon.ipynb`
@@ -74,4 +76,4 @@ To start the local server and access the notebooks for the training. To visualiz
 - `tensorboard --logdir vae/train` for the large model
 - `tensorboard --logdir vae_small/train` for the small model
 
-To use the trained models, refer to `vae/presentation_vis.ipynb` for examples.
+To use the trained models, refer to `vae/usage.ipynb` for examples.
